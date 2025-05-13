@@ -1,0 +1,23 @@
+### USER SIGN-UP
+POST http://localhost:8080/api/auth/sign-up
+Content-Type: application/json
+
+{
+  "user": {
+    "username": "testuser2",
+    "password": "Test1234!@",
+    "role": "USER"
+  }
+}
+
+
+### USER SIGN-IN
+POST http://localhost:8080/api/auth/sign-in
+Content-Type: application/json
+
+{
+  "user": {
+    "username": "testuser2",
+    "password": "Test1234!@"
+  }
+}
