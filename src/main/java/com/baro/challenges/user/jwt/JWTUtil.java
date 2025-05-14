@@ -31,6 +31,10 @@ public class JWTUtil {
         this.refreshTokenExpiration = refreshTokenExpiration;
     }
 
+    public SecretKey getSecretKey() {
+        return secretKey;
+    }
+
     //Access Token 생성
     public String createAccessToken(Long userId, String username, String role) {
         return Jwts.builder()
