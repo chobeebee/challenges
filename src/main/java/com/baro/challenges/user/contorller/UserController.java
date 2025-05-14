@@ -8,6 +8,7 @@ import com.baro.challenges.user.dto.response.ResAuthPostSignUpDTOApi;
 import com.baro.challenges.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,6 +36,13 @@ public class UserController {
     // 로그인
     @PostMapping("/sign-in")
     public ResponseEntity<ResDTO<ResAuthPostSignInDTOApi>> signIn(@RequestBody @Valid ReqAuthPostSignInDTOApi reqDto){
+
+        ResAuthPostSignInDTOApi resDto = userService.signIn(reqDto);
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        String AUTHORIZATION_PREFIX = "Bearer ";
+        httpHeaders.set(HttpHeaders.AUTHORIZATION, AUTHORIZATION_PREFIX + resDto.getAccessJwt());
+        httpHeaders.set("Refresh-token", resDto.getRefreshJwt());
 
         return new ResponseEntity<>(
                 ResDTO.success(userService.signIn(reqDto)),
