@@ -97,4 +97,11 @@ public class UserServiceImpl implements UserService{
 
         return ResAuthPostSignInDTOApi.of(accessToken, refreshToken);
     }
+
+    // 관리자용 회원 조회
+    @Override
+    public UserEntity getUserByUserId(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(ResponseCode.USER_NOT_FOUND));
+    }
 }

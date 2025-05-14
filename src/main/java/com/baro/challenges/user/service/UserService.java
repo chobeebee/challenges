@@ -10,4 +10,6 @@ public interface UserService {
     UserEntity signUp(@Valid ReqAuthPostSignUpDTOApi reqDto);
 
     ResAuthPostSignInDTOApi signIn(@Valid ReqAuthPostSignInDTOApi reqDto);
+
+    UserEntity getUserByUserId(Long userId);
 }

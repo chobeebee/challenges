@@ -10,4 +10,6 @@ public interface UserRepository {
     Optional<UserEntity> findByUsernameAndIsDeletedFalse(String username);
 
     Optional<UserEntity> findByUsername(String username);
+
+    Optional<UserEntity> findById(Long userId);
 }
