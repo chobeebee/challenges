@@ -11,10 +11,10 @@ import com.baro.challenges.user.jwt.JWTUtil;
 import com.baro.challenges.user.repository.RefreshTokenRepository;
 import com.baro.challenges.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -24,6 +24,7 @@ public class UserServiceImpl implements UserService{
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JWTUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
 
     // 회원 가입
     @Override
@@ -37,10 +38,14 @@ public class UserServiceImpl implements UserService{
         Optional<UserEntity> userCheck = userRepository.findByUsername(username);
         if(userCheck.isPresent()) throw new CustomException(ResponseCode.USER_ALREADY_EXISTS);
 
+        // 비밀번호 암호화
+        String encryptedPassword = passwordEncoder.encode(password);
+        System.out.println(encryptedPassword);
+
         // 회원 생성
         UserEntity userEntity = UserEntity.builder()
                 .username(username)
-                .password(password)
+                .password(encryptedPassword)
                 .role(reqDto.getUser().getRole())
                 .build();
         userRepository.save(userEntity);
@@ -60,7 +65,9 @@ public class UserServiceImpl implements UserService{
                 .orElseThrow(()-> new CustomException(ResponseCode.USER_NOT_FOUND));
 
         // 비밀번호가 일치하는지 체크
-        if(!Objects.equals(password, userEntity.getPassword())) throw new CustomException(ResponseCode.PASSWORD_MISMATCH);
+        if(!passwordEncoder.matches(password, userEntity.getPassword())){
+            throw new CustomException(ResponseCode.PASSWORD_MISMATCH);
+        }
 
         // accessToken 발급
         String accessToken = jwtUtil.createAccessToken(
