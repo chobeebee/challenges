@@ -1,6 +1,8 @@
 spring:
   application:
     name: challenges
+  config:
+    import: optional:file:.env[.properties]
 
   datasource:
     url: jdbc:h2:mem:testdb
@@ -18,5 +20,11 @@ spring:
   h2:
     console:
       enabled: true # H2 ? ?? ???
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  access-token-expiration: ${ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${REFRESH_TOKEN_EXPIRATION}
+
 server:
   port: 8080
