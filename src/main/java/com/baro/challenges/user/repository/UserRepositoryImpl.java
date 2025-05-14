@@ -11,6 +11,7 @@ import java.util.Optional;
 public class UserRepositoryImpl implements UserRepository {
 
     private final UserJpaRepository jpaRepository;
+    private final UserJpaRepository userJpaRepository;
 
     @Override
     public UserEntity save(UserEntity userEntity) {
@@ -25,5 +26,10 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public Optional<UserEntity> findByUsername(String username) {
         return jpaRepository.findByUsername(username);
+    }
+
+    @Override
+    public Optional<UserEntity> findById(Long userId) {
+        return userJpaRepository.findById(userId);
     }
 }
