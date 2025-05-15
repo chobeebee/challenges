@@ -11,6 +11,7 @@ import com.baro.challenges.user.entity.UserEntity;
 import com.baro.challenges.user.jwt.JWTUtil;
 import com.baro.challenges.user.service.UserServiceImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,13 +20,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import javax.crypto.SecretKey;
+import java.util.Date;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doAnswer;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -51,7 +57,7 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         // 테스트에서 사용할 간단한 동작 설정
-       doAnswer(invocation -> {
+        doAnswer(invocation -> {
             HttpServletResponse response = invocation.getArgument(1);
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return null;
@@ -198,5 +204,141 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("회원조회 성공 - 마스터")
+    void testGetUserForMasterInSuccess() throws Exception {
+        // given
+        Long userId = 1L;
+        String username = "testmaster";
+        String password = "Test1234!@";
+        UserEntity.Role role = UserEntity.Role.MASTER;
+
+        UserEntity userEntity = UserEntity.builder()
+                .username(username)
+                .password(password)
+                .role(role)
+                .build();
+
+        // 직접 JWT 토큰 생성
+        SecretKey secretKey = Jwts.SIG.HS256.key().build();
+        given(jwtUtil.getSecretKey()).willReturn(secretKey);
+
+        String token = Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .claim("username", username)
+                .claim("role", role)
+                .claim("type", "REFRESH")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 86400000))
+                .signWith(secretKey)
+                .compact();
+
+        given(userService.getUserByUserId(any())).willReturn(userEntity);
+
+        // when & then
+        mockMvc.perform(get("/api/admin/userId/{id}", userId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("회원조회 실패 - 일반 회원")
+    void testGetUserForMasterInFail() throws Exception {
+        // given
+        Long userId = 1L;
+        String username = "testuser";
+        String password = "Test1234!@";
+        UserEntity.Role role = UserEntity.Role.USER;
+
+        UserEntity userEntity = UserEntity.builder()
+                .username(username)
+                .password(password)
+                .role(role)
+                .build();
+
+        // 직접 JWT 토큰 생성
+        SecretKey secretKey = Jwts.SIG.HS256.key().build();
+        given(jwtUtil.getSecretKey()).willReturn(secretKey);
+
+        String token = Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .claim("username", username)
+                .claim("role", role.name())
+                .claim("type", "REFRESH")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 86400000))
+                .signWith(secretKey)
+                .compact();
+
+        given(userService.getUserByUserId(any())).willReturn(userEntity);
+
+        // when & then
+        mockMvc.perform(get("/api/admin/userId/{userId}", userId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("회원조회 실패 - 토큰 없음")
+    void testGetUserForMasterWithoutToken() throws Exception {
+        // given
+        Long userId = 1L;
+        given(userService.getUserByUserId(any())).willThrow(new CustomException(ResponseCode.TOKEN_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(get("/api/admin/userId/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("회원조회 실패 - 유효하지 않은 토큰")
+    void testGetUserForMasterInvalidToken() throws Exception {
+        // given
+        Long userId = 1L;
+        given(userService.getUserByUserId(any())).willThrow(new CustomException(ResponseCode.INVALID_TOKEN));
+
+        // when & then
+        mockMvc.perform(get("/api/admin/userId/{userId}", userId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("회원조회 실패 - 만료된 토큰")
+    void testGetUserForMasterExpiredToken() throws Exception {
+        // given
+        Long userId = 1L;
+        String username = "testuser";
+        UserEntity.Role role = UserEntity.Role.USER;
+
+        // 직접 JWT 토큰 생성
+        SecretKey secretKey = Jwts.SIG.HS256.key().build();
+        given(jwtUtil.getSecretKey()).willReturn(secretKey);
+
+        String token = Jwts.builder()
+                .subject(username)
+                .claim("userId", userId)
+                .claim("username", username)
+                .claim("role", role.name())
+                .claim("type", "REFRESH")
+                .issuedAt(new Date(System.currentTimeMillis() - 86400000))
+                .expiration(new Date(System.currentTimeMillis() - 10000))
+                .signWith(secretKey)
+                .compact();
+
+        given(userService.getUserByUserId(any())).willThrow(new CustomException(ResponseCode.INVALID_TOKEN));
+
+        // when & then
+        mockMvc.perform(get("/api/admin/userId/{userId}", userId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
     }
 }
