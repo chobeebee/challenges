@@ -12,4 +12,6 @@ public interface UserRepository {
     Optional<UserEntity> findByUsername(String username);
 
     Optional<UserEntity> findById(Long userId);
+
+    long count();
 }
