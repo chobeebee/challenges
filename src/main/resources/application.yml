@@ -19,7 +19,7 @@ spring:
     defer-datasource-initialization: true
   h2:
     console:
-      enabled: true # H2 ? ?? ???
+      enabled: true
 
 jwt:
   secret: ${JWT_SECRET_KEY}
@@ -28,3 +28,18 @@ jwt:
 
 server:
   port: 8080
+
+springdoc:
+  swagger-ui:
+    enabled: true
+    path: /docs
+    url: /springdoc/openapi3-user-service.json
+    operations-sorter: alpha
+    tags-sorter: alpha
+  api-docs:
+    enabled: true
+    path: /api-docs-user-service
+
+logging:
+  level:
+    org.springframework.security: debug

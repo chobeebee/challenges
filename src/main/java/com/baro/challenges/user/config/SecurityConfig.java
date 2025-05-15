@@ -81,6 +81,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/springdoc/**",
+                                "/api-docs-user-service/**",
                                 "/api/auth/**"
                         ).permitAll()
                         .anyRequest().authenticated()

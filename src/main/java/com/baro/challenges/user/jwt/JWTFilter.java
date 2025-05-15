@@ -31,7 +31,8 @@ public class JWTFilter extends OncePerRequestFilter {
         // 회원가입, 로그인, API 문서 요청은 필터링 대상에서 제외
         String path = request.getRequestURI();
         if (path.equals("/api/auth/sign-up") || path.equals("/api/auth/sign-in")
-                || path.contains("/v3/api-docs") || path.contains("/springdoc")
+                || path.startsWith("/v3/api-docs") || path.startsWith("/springdoc")
+                || path.startsWith("/swagger-ui") || path.startsWith("/api-docs-user-service")
         ) {
             filterChain.doFilter(request, response);
             return;
