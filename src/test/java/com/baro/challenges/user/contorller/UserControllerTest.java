@@ -4,7 +4,9 @@ import com.baro.challenges.common.exception.CustomException;
 import com.baro.challenges.common.exception.dto.ResponseCode;
 import com.baro.challenges.common.exception.handler.CustomAccessDeniedHandler;
 import com.baro.challenges.user.config.SecurityConfig;
+import com.baro.challenges.user.dto.request.ReqAuthPostSignInDTOApi;
 import com.baro.challenges.user.dto.request.ReqAuthPostSignUpDTOApi;
+import com.baro.challenges.user.dto.response.ResAuthPostSignInDTOApi;
 import com.baro.challenges.user.entity.UserEntity;
 import com.baro.challenges.user.jwt.JWTUtil;
 import com.baro.challenges.user.service.UserServiceImpl;
@@ -116,5 +118,85 @@ class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("로그인 성공")
+    void testUserSignInSuccess() throws Exception {
+        // given
+        String username = "testuser";
+        String password = "Test1234!@";
+
+        ReqAuthPostSignInDTOApi.User requestUser = ReqAuthPostSignInDTOApi.User.builder()
+                .username(username)
+                .password(password)
+                .build();
+
+        ReqAuthPostSignInDTOApi request = ReqAuthPostSignInDTOApi.builder()
+                .user(requestUser)
+                .build();
+
+        ResAuthPostSignInDTOApi response = ResAuthPostSignInDTOApi.builder()
+                .accessJwt("mock-access-token")
+                .refreshJwt("mock-refresh-token")
+                .build();
+
+        given(userService.signIn(any())).willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/auth/sign-in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 아이디 불일치")
+    void testUserSignInFailWhenNotFoundUser() throws Exception {
+        // given
+        String username = "testuser";
+        String password = "Test1234!@";
+
+        ReqAuthPostSignInDTOApi.User requestUser = ReqAuthPostSignInDTOApi.User.builder()
+                .username(username)
+                .password(password)
+                .build();
+
+        ReqAuthPostSignInDTOApi request = ReqAuthPostSignInDTOApi.builder()
+                .user(requestUser)
+                .build();
+
+        given(userService.signIn(any())).willThrow(new CustomException(ResponseCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(post("/api/auth/sign-in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("로그인 실패 - 비밀번호 불일치")
+    void testUserSignInFailWhenPasswordIncorrect() throws Exception {
+        // given
+        String username = "testuser";
+        String password = "Test1234!@";
+
+        ReqAuthPostSignInDTOApi.User requestUser = ReqAuthPostSignInDTOApi.User.builder()
+                .username(username)
+                .password(password)
+                .build();
+
+        ReqAuthPostSignInDTOApi request = ReqAuthPostSignInDTOApi.builder()
+                .user(requestUser)
+                .build();
+
+        given(userService.signIn(any())).willThrow(new CustomException(ResponseCode.PASSWORD_MISMATCH));
+
+        // when & then
+        mockMvc.perform(post("/api/auth/sign-in")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }
