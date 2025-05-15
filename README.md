@@ -3,6 +3,7 @@
 > * 🔗 Swagger UI : http://15.164.97.101:8080/swagger-ui/index.html
 > * 🔗 AWS EC2 URL : http://15.164.97.101:8080
 
+---
 
 ## 프로젝트 개요
 - 아키텍처 : 모놀리틱 구조 + 레이어드 아키텍처
@@ -19,7 +20,7 @@
 
 ---
 
-## 🛠️ 기술 스택
+## 기술 스택
 | 항목     | 기술                                 |
 | ------ | ---------------------------------- |
 | 언어     | ![JAVA](https://img.shields.io/badge/JAVA-007396?style=for-the-badge&logo=OpenJDK&logoColor=white)                           |
